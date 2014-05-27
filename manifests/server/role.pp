@@ -38,46 +38,46 @@ define postgresql::server::role(
     require    => [ Postgresql_psql["CREATE ROLE \"${username}\" ${password_sql} ${login_sql} ${createrole_sql} ${createdb_sql} ${superuser_sql} ${replication_sql} CONNECTION LIMIT ${connection_limit}"], Class['postgresql::server'] ],
   }
 
-  postgresql_psql {"CREATE ROLE \"${username}\" ${password_sql} ${login_sql} ${createrole_sql} ${createdb_sql} ${superuser_sql} ${replication_sql} CONNECTION LIMIT ${connection_limit}":
-    unless  => "SELECT rolname FROM pg_roles WHERE rolname='${username}'",
-    require => Class['Postgresql::Server'],
-  }
+  ensure_resource('postgresql_psql', "CREATE ROLE \"${username}\" ${password_sql} ${login_sql} ${createrole_sql} ${createdb_sql} ${superuser_sql} ${replication_sql} CONNECTION LIMIT ${connection_limit}", {
+    'unless'  => "SELECT rolname FROM pg_roles WHERE rolname='${username}'",
+    'require' => Class['Postgresql::Server'],
+  })
 
-  postgresql_psql {"ALTER ROLE \"${username}\" ${superuser_sql}":
-    unless => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolsuper=${superuser}",
-  }
+  ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" ${superuser_sql}", {
+    'unless' => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolsuper=${superuser}",
+  })
 
-  postgresql_psql {"ALTER ROLE \"${username}\" ${createdb_sql}":
-    unless => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolcreatedb=${createdb}",
-  }
+  ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" ${createdb_sql}", {
+    'unless' => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolcreatedb=${createdb}",
+  })
 
-  postgresql_psql {"ALTER ROLE \"${username}\" ${createrole_sql}":
-    unless => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolcreaterole=${createrole}",
-  }
+  ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" ${createrole_sql}", {
+    'unless' => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolcreaterole=${createrole}",
+  })
 
-  postgresql_psql {"ALTER ROLE \"${username}\" ${login_sql}":
-    unless => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolcanlogin=${login}",
-  }
+  ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" ${login_sql}", {
+    'unless' => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolcanlogin=${login}",
+  })
 
-  postgresql_psql {"ALTER ROLE \"${username}\" ${inherit_sql}":
-    unless => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolinherit=${inherit}",
-  }
+  ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" ${inherit_sql}", {
+    'unless' => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolinherit=${inherit}",
+  })
 
   if(versioncmp($version, '9.1') >= 0) {
     if $replication_sql == '' {
-      postgresql_psql {"ALTER ROLE \"${username}\" NOREPLICATION":
-        unless => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolreplication=${replication}",
-      }
+      ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" NOREPLICATION", {
+        'unless' => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolreplication=${replication}",
+      })
     } else {
-      postgresql_psql {"ALTER ROLE \"${username}\" ${replication_sql}":
-        unless => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolreplication=${replication}",
-      }
+      ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" ${replication_sql}", {
+        'unless' => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolreplication=${replication}",
+      })
     }
   }
 
-  postgresql_psql {"ALTER ROLE \"${username}\" CONNECTION LIMIT ${connection_limit}":
-    unless => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolconnlimit=${connection_limit}",
-  }
+  ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" CONNECTION LIMIT ${connection_limit}", {
+    'unless' => "SELECT rolname FROM pg_roles WHERE rolname='${username}' and rolconnlimit=${connection_limit}",
+  })
 
   if $password_hash {
     if($password_hash =~ /^md5.+/) {
@@ -86,8 +86,8 @@ define postgresql::server::role(
       $pwd_md5 = md5("${password_hash}${username}")
       $pwd_hash_sql = "md5${pwd_md5}"
     }
-    postgresql_psql {"ALTER ROLE \"${username}\" ${password_sql}":
-      unless => "SELECT usename FROM pg_shadow WHERE usename='${username}' and passwd='${pwd_hash_sql}'",
-    }
+    ensure_resource('postgresql_psql', "ALTER ROLE \"${username}\" ${password_sql}", {
+      'unless' => "SELECT usename FROM pg_shadow WHERE usename='${username}' and passwd='${pwd_hash_sql}'",
+    })
   }
 }

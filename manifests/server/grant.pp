@@ -67,15 +67,15 @@ define postgresql::server::grant (
   }
 
   $grant_cmd = "GRANT ${_privilege} ON ${_object_type} \"${object_name}\" TO \"${role}\""
-  postgresql_psql { $grant_cmd:
-    db         => $on_db,
-    port       => $port,
-    psql_user  => $psql_user,
-    psql_group => $group,
-    psql_path  => $psql_path,
-    unless     => "SELECT 1 WHERE ${unless_function}('${role}', '${object_name}', '${unless_privilege}')",
-    require    => Class['postgresql::server']
-  }
+  ensure_resource('postgresql_psql', $grant_cmd, {
+    'db'         => $on_db,
+    'port'       => $port,
+    'psql_user'  => $psql_user,
+    'psql_group' => $group,
+    'psql_path'  => $psql_path,
+    'unless'     => "SELECT 1 WHERE ${unless_function}('${role}', '${object_name}', '${unless_privilege}')",
+    'require'    => Class['postgresql::server']
+  })
 
   if($role != undef and defined(Postgresql::Server::Role[$role])) {
     Postgresql::Server::Role[$role]->Postgresql_psql[$grant_cmd]

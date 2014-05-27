@@ -24,19 +24,19 @@ define postgresql::server::tablespace(
 
   $create_tablespace_command = "CREATE TABLESPACE \"${spcname}\" ${owner_section} LOCATION '${location}'"
 
-  file { $location:
-    ensure => directory,
-    owner  => $user,
-    group  => $group,
-    mode   => '0700',
-  }
+  ensure_resource('file', $location, {
+    'ensure' => directory,
+    'owner'  => $user,
+    'group'  => $group,
+    'mode'   => '0700',
+  })
 
   $create_ts = "Create tablespace '${spcname}'"
-  postgresql_psql { "Create tablespace '${spcname}'":
-    command => $create_tablespace_command,
-    unless  => "SELECT spcname FROM pg_tablespace WHERE spcname='${spcname}'",
-    require => [Class['postgresql::server'], File[$location]],
-  }
+  ensure_resource('postgresql_psql', "Create tablespace '${spcname}'", {
+    'command' => $create_tablespace_command,
+    'unless'  => "SELECT spcname FROM pg_tablespace WHERE spcname='${spcname}'",
+    'require' => [Class['postgresql::server'], File[$location]],
+  })
 
   if($owner != undef and defined(Postgresql::Server::Role[$owner])) {
     Postgresql::Server::Role[$owner]->Postgresql_psql[$create_ts]

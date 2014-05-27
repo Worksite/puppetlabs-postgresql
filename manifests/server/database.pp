@@ -48,33 +48,38 @@ define postgresql::server::database(
   }
 
   $createdb_command = "${createdb_path} --port='${port}' --owner='${owner}' --template=${template} ${encoding_option}${locale_option}${tablespace_option} '${dbname}'"
+  $revoke_sql = "REVOKE ${public_revoke_privilege} ON DATABASE \"${dbname}\" FROM public"
+  $update_sql = "UPDATE pg_database SET datistemplate = ${istemplate} WHERE datname = '${dbname}'"
 
-  postgresql_psql { "Check for existence of db '${dbname}'":
-    command => 'SELECT 1',
-    unless  => "SELECT datname FROM pg_database WHERE datname='${dbname}'",
-    db      => $default_db,
-    port    => $port,
-    require => Class['postgresql::server::service']
-  }~>
-  exec { $createdb_command :
-    refreshonly => true,
-    user        => $user,
-    logoutput   => on_failure,
-  }~>
+  ensure_resource('postgresql_psql', "Check for existence of db '${dbname}'", {
+    'command' => 'SELECT 1',
+    'unless'  => "SELECT datname FROM pg_database WHERE datname='${dbname}'",
+    'db'      => $default_db,
+    'port'    => $port,
+    'require' => Class['postgresql::server::service'],
+    'notify'  => Exec[$createdb_command],
+  })
+
+  ensure_resource('exec', $createdb_command, {
+    'refreshonly' => true,
+    'user'        => $user,
+    'logoutput'   => on_failure,
+    'notify'      => Postgresql_psql[$revoke_sql],
+  })
 
   # This will prevent users from connecting to the database unless they've been
   #  granted privileges.
-  postgresql_psql {"REVOKE ${public_revoke_privilege} ON DATABASE \"${dbname}\" FROM public":
-    db          => $default_db,
-    port        => $port,
-    refreshonly => true,
-  }
+  ensure_resource('postgresql_psql', $revoke_sql, {
+    'db'          => $default_db,
+    'port'        => $port,
+    'refreshonly' => true,
+  })
 
-  Exec [ $createdb_command ]->
-  postgresql_psql {"UPDATE pg_database SET datistemplate = ${istemplate} WHERE datname = '${dbname}'":
-    unless => "SELECT datname FROM pg_database WHERE datname = '${dbname}' AND datistemplate = ${istemplate}",
-    db     => $default_db,
-  }
+  ensure_resource('postgresql_psql', $update_sql, {
+    'unless'  => "SELECT datname FROM pg_database WHERE datname = '${dbname}' AND datistemplate = ${istemplate}",
+    'db'      => $default_db,
+    'require' => Exec[$createdb_command],
+  })
 
   # Build up dependencies on tablespace
   if($tablespace != undef and defined(Postgresql::Server::Tablespace[$tablespace])) {
