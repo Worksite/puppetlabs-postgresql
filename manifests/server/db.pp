@@ -13,24 +13,31 @@ define postgresql::server::db (
   $owner      = undef
 ) {
 
-  ensure_resource('postgresql::server::database', $dbname, {
-    encoding   => $encoding,
-    tablespace => $tablespace,
-    template   => $template,
-    locale     => $locale,
-    istemplate => $istemplate,
-    owner      => $owner,
-  })
+  if ! defined(Postgresql::Server::Database[$dbname]) {
+    ensure_resource('postgresql::server::database', $dbname, {
+      encoding   => $encoding,
+      tablespace => $tablespace,
+      template   => $template,
+      locale     => $locale,
+      istemplate => $istemplate,
+      owner      => $owner,
+    })
+  }
 
-  ensure_resource('postgresql::server::role', $user, {
-    password_hash => $password,
-  })
+  if ! defined(Postgresql::Server::Role[$user]) {
+    ensure_resource('postgresql::server::role', $user, {
+      password_hash => $password,
+    })
+  }
 
-  ensure_resource('postgresql::server::database_grant', "GRANT ${user} - ${grant} - ${dbname}", {
-    privilege => $grant,
-    db        => $dbname,
-    role      => $user,
-  })
+  if ! defined(Postgresql::Server::Database_grant["GRANT ${user} - ${grant} - ${dbname}"]) {
+    ensure_resource('postgresql::server::database_grant', "GRANT ${user} - ${grant} - ${dbname}", {
+      privilege => $grant,
+      db        => $dbname,
+      role      => $user,
+      require   => Postgresql::Server::Role[$user],
+    })
+  }
 
   if($tablespace != undef and defined(Postgresql::Server::Tablespace[$tablespace])) {
     Postgresql::Server::Tablespace[$tablespace]->Postgresql::Server::Database[$name]
