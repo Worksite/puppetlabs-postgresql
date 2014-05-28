@@ -46,10 +46,31 @@ class postgresql::server (
   $manage_pg_hba_conf         = $postgresql::params::manage_pg_hba_conf,
   $firewall_supported         = $postgresql::params::firewall_supported,
 
+  $config_entries             = {},
+  $pg_hba_rules               = {},
+  $databases                  = {},
+  $tablespaces                = {},
+  $roles                      = {},
+  $database_grants            = {},
+  $table_grants               = {},
+  $hieramerge                 = false,
+
   #Deprecated
   $version                    = $postgresql::params::version,
 ) inherits postgresql::params {
   $pg = 'postgresql::server'
+
+  validate_hash(
+    $config_entries,
+    $pg_hba_rules,
+    $databases,
+    $roles,
+    $database_grants,
+    $table_grants,
+    $tablespaces,
+  )
+
+  validate_bool($hieramerge)
 
   if $version != $postgresql::params::version {
     warning('Passing "version" to postgresql::server is deprecated; please use postgresql::globals instead.')
@@ -59,22 +80,27 @@ class postgresql::server (
     # Reload has its own ordering, specified by other defines
     class { "${pg}::reload": require => Class["${pg}::install"] }
 
-    anchor { "${pg}::start": }->
-    class { "${pg}::install": }->
-    class { "${pg}::initdb": }->
-    class { "${pg}::config": }->
-    class { "${pg}::service": }->
-    class { "${pg}::passwd": }->
-    class { "${pg}::firewall": }->
+    anchor { "${pg}::start": }      ->
+    class { "${pg}::install": }     ->
+    class { "${pg}::initdb": }      ->
+    class { "${pg}::config": }      ->
+    class { "${pg}::service": }     ->
+    class { "${pg}::passwd": }      ->
+    class { "${pg}::firewall": }    ->
+    class { "${pg}::dbs": }         ->
+    class { "${pg}::databases": }   ->
+    class { "${pg}::tablespaces": } ->
+    class { "${pg}::roles": }       ->
+    class { "${pg}::grants": }      ->
     anchor { "${pg}::end": }
   } else {
-    anchor { "${pg}::start": }->
-    class { "${pg}::firewall": }->
-    class { "${pg}::passwd": }->
-    class { "${pg}::service": }->
-    class { "${pg}::install": }->
-    class { "${pg}::initdb": }->
-    class { "${pg}::config": }->
+    anchor { "${pg}::start": }      ->
+    class { "${pg}::firewall": }    ->
+    class { "${pg}::passwd": }      ->
+    class { "${pg}::service": }     ->
+    class { "${pg}::install": }     ->
+    class { "${pg}::initdb": }      ->
+    class { "${pg}::config": }      ->
     anchor { "${pg}::end": }
   }
 }
