@@ -14,6 +14,9 @@ class postgresql::server::config {
   $group                      = $postgresql::server::group
   $version                    = $postgresql::server::version
   $manage_pg_hba_conf         = $postgresql::server::manage_pg_hba_conf
+  $pg_hba_rules               = $postgresql::server::pg_hba_rules
+  $config_entries             = $postgresql::server::config_entries
+  $hieramerge                 = $postgresql::server::hieramerge
 
   if ($ensure == 'present' or $ensure == true) {
 
@@ -91,15 +94,61 @@ class postgresql::server::config {
         'ipv6acls', 102)
         create_resources('postgresql::server::pg_hba_rule', $ipv6acl_resources)
       }
+
+      # Load any Hiera based pg hba rules (if enabled and present)
+      #
+      # NOTE: hiera hash merging does not work in a parameterized class
+      #   definition; so we call it here.
+      #
+      # http://docs.puppetlabs.com/hiera/1/puppet.html#limitations
+      # https://tickets.puppetlabs.com/browse/HI-118
+      #
+      if $hieramerge {
+        $x_pg_hba_rules = hiera_hash('postgresql::server::pg_hba_rules', $pg_hba_rules)
+
+      # Fall back to user given class parameter / priority based hiera lookup
+      } else {
+        $x_pg_hba_rules = $pg_hba_rules
+      }
+
+      if ! empty($x_pg_hba_rules) {
+        create_resources('::postgresql::server::pg_hba_rule', $x_pg_hba_rules)
+      }
+
+    }
+
+    # Load any Hiera based config entries (if enabled and present)
+    #
+    # NOTE: hiera hash merging does not work in a parameterized class
+    #   definition; so we call it here.
+    #
+    # http://docs.puppetlabs.com/hiera/1/puppet.html#limitations
+    # https://tickets.puppetlabs.com/browse/HI-118
+    #
+    if $hieramerge {
+      $x_config_entries = hiera_hash('postgresql::server::config_entries', $config_entries)
+
+    # Fall back to user given class parameter / priority based hiera lookup
+    } else {
+      $x_config_entries = $config_entries
+    }
+
+    if ! empty($x_config_entries) {
+      create_resources('::postgresql::server::config_entry', $x_config_entries)
     }
 
     # We must set a "listen_addresses" line in the postgresql.conf if we
     # want to allow any connections from remote hosts.
-    postgresql::server::config_entry { 'listen_addresses':
-      value => $listen_addresses,
+    if ! defined(Postgresql::Server::Config_entry['listen_addresses']) {
+      postgresql::server::config_entry { 'listen_addresses':
+        value => $listen_addresses,
+      }
     }
-    postgresql::server::config_entry { 'port':
-      value => "${port}",
+
+    if ! defined(Postgresql::Server::Config_entry['port']) {
+      postgresql::server::config_entry { 'port':
+        value => "${port}",
+      }
     }
 
     # RedHat-based systems hardcode some PG* variables in the init script, and need to be overriden
