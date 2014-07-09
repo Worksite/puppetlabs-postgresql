@@ -2,7 +2,7 @@
 class postgresql::repo (
   $ensure  = $postgresql::params::ensure,
   $version = undef
-) inherits postgresql::params {
+) {
   case $::osfamily {
     'RedHat', 'Linux': {
       if $version == undef {
