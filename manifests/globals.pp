@@ -101,14 +101,4 @@ class postgresql::globals (
   }
   $globals_postgis_version = pick($postgis_version, $default_postgis_version)
 
-  # Setup of the repo only makes sense globally, so we are doing this here.
-  if($manage_package_repo) {
-    # Workaround the lack of RHEL7 repositories for now.
-    if ! ($::operatingsystem == 'RedHat' and $::operatingsystemrelease =~ /^7/) {
-      class { 'postgresql::repo':
-        ensure  => $ensure,
-        version => $globals_version
-      }
-    }
-  }
 }

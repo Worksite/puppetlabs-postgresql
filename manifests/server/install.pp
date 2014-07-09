@@ -3,6 +3,12 @@ class postgresql::server::install {
   $package_ensure      = $postgresql::server::package_ensure
   $package_name        = $postgresql::server::package_name
   $client_package_name = $postgresql::server::client_package_name
+  $manage_package_repo = $postgresql::server::manage_package_repo
+
+  # Setup the repo
+  if $manage_package_repo {
+    include postgresql::repo
+  }
 
   # This is necessary to ensure that the extra client package that was
   # installed automatically by the server package is removed and all
@@ -38,12 +44,16 @@ class postgresql::server::install {
   }
 
   package { 'postgresql-server':
-    ensure => $_package_ensure,
-    name   => $package_name,
+    ensure  => $_package_ensure,
+    name    => $package_name,
 
     # This is searched for to create relationships with the package repos, be
     # careful about its removal
-    tag    => 'postgresql',
+    tag     => 'postgresql',
+    require => $manage_package_repo ? {
+      true    => Class['postgresql::repo'],
+      default => undef,
+    },
   }
 
 }

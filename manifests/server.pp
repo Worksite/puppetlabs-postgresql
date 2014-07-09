@@ -43,6 +43,7 @@ class postgresql::server (
   $locale                     = $postgresql::params::locale,
 
   $manage_firewall            = $postgresql::params::manage_firewall,
+  $manage_package_repo        = $postgresql::globals::manage_package_repo
   $manage_pg_hba_conf         = $postgresql::params::manage_pg_hba_conf,
   $firewall_supported         = $postgresql::params::firewall_supported,
 

@@ -1,13 +1,18 @@
 # PRIVATE CLASS: do not use directly
 class postgresql::repo (
   $ensure  = $postgresql::params::ensure,
-  $version = undef
+  $version = $postgresql::globals::globals_version
 ) {
   case $::osfamily {
     'RedHat', 'Linux': {
       if $version == undef {
         fail("The parameter 'version' for 'postgresql::repo' is undefined. You must always define it when osfamily == Redhat or Linux")
       }
+
+      if ($::operatingsystem == 'RedHat' and $::operatingsystemrelease =~ /^7/) {
+        fail("RHEL 7 repo management is not yet supported")
+      }
+
       class { 'postgresql::repo::yum_postgresql_org': }
     }
 
