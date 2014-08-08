@@ -88,12 +88,15 @@ class postgresql::server (
     class { "${pg}::service": }     ->
     class { "${pg}::passwd": }      ->
     class { "${pg}::firewall": }    ->
-    class { "${pg}::dbs": }         ->
-    class { "${pg}::databases": }   ->
-    class { "${pg}::tablespaces": } ->
-    class { "${pg}::roles": }       ->
-    class { "${pg}::grants": }      ->
     anchor { "${pg}::end": }
+
+    # Continue init after the server is online
+    class { "${pg}::dbs":         require => Anchor["${pg}::end"] }
+    class { "${pg}::databases":   require => Anchor["${pg}::end"] }
+    class { "${pg}::roles":       require => Anchor["${pg}::end"] }
+    class { "${pg}::grants":      require => Anchor["${pg}::end"] }
+    class { "${pg}::tablespaces": require => Anchor["${pg}::end"] }
+
   } else {
     anchor { "${pg}::start": }      ->
     class { "${pg}::firewall": }    ->
