@@ -50,6 +50,7 @@ class postgresql::server (
   $config_entries             = {},
   $pg_hba_rules               = {},
   $databases                  = {},
+  $dbs                        = {},
   $tablespaces                = {},
   $roles                      = {},
   $database_grants            = {},
