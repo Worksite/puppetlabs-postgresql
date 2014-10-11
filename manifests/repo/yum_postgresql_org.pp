@@ -24,6 +24,7 @@ class postgresql::repo::yum_postgresql_org inherits postgresql::repo {
       enabled  => 1,
       gpgcheck => 1,
       gpgkey   => "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG-${package_version}",
+      priority => "${yum_priority}"
     }
 
     Yumrepo['yum.postgresql.org'] -> Package<|tag == 'postgresql'|>

@@ -46,7 +46,8 @@ class postgresql::globals (
   $manage_pg_hba_conf   = undef,
   $firewall_supported   = undef,
 
-  $manage_package_repo  = undef
+  $manage_package_repo  = undef,
+  $yum_priority         = undef
 ) {
   # We are determining this here, because it is needed by the package repo
   # class.

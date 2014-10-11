@@ -1,7 +1,8 @@
 # PRIVATE CLASS: do not use directly
 class postgresql::repo (
-  $ensure  = $postgresql::params::ensure,
-  $version = $postgresql::globals::globals_version
+  $ensure       = $postgresql::params::ensure,
+  $version      = $postgresql::globals::globals_version,
+  $yum_priority = $postgresql::params::yum_priority
 ) {
   case $::osfamily {
     'RedHat', 'Linux': {

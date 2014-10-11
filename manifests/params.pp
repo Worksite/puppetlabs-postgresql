@@ -2,6 +2,7 @@
 class postgresql::params inherits postgresql::globals {
   $ensure                     = present
   $version                    = $globals_version
+  $yum_priority               = 0
   $postgis_version            = $globals_postgis_version
   $listen_addresses           = 'localhost'
   $port                       = 5432
